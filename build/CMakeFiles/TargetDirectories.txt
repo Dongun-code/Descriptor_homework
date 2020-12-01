@@ -1,0 +1,3 @@
+/home/milab/homework/MatchFeatures/build/CMakeFiles/rebuild_cache.dir
+/home/milab/homework/MatchFeatures/build/CMakeFiles/cvfeature.dir
+/home/milab/homework/MatchFeatures/build/CMakeFiles/edit_cache.dir

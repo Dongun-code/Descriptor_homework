@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/milab/homework/MatchFeatures/build",
+  "command": "g++   -isystem /home/milab/lib/deploy/opencv/include/opencv4  -g   -std=gnu++11 -o CMakeFiles/cvfeature.dir/main.cpp.o -c /home/milab/homework/MatchFeatures/main.cpp",
+  "file": "/home/milab/homework/MatchFeatures/main.cpp"
+}
+]
