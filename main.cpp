@@ -18,7 +18,7 @@ int main()
     cv::Mat frame;
     cap >> frame;
 
-    MatchHandler matcher({"sift", "sift"}, {"bf", "flann"});
+    MatchHandler matcher({"sift","surf", "orb"}, {"bf","flann", "flann"});
 
     matcher.SetRefImage(frame.clone());
     while(1)

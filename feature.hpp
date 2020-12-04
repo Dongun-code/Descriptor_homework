@@ -35,19 +35,17 @@ public:
     {
         FeaturePtr desc;
         if(name=="sift")
-            desc = cv::SIFT::create();
+            return Detector(name, cv::SIFT::create());
         else if(name=="surf")
-            desc = cv::xfeatures2d::SURF::create();
+            return Detector(name, cv::xfeatures2d::SURF::create());
         else if(name == "orb")
-            desc = cv::ORB::create();
+            return Detector(name, cv::ORB::create());
         else if(name == "kaze")
-            desc = cv::KAZE::create();
+            return Detector(name, cv::KAZE::create());
         else if(name == "brisk")
-            desc = cv::BRISK::create();
+            return Detector(name, cv::BRISK::create());
         else
             throw std::string("error");
-            
-        return Detector(name, desc);
             
     }
     
@@ -84,44 +82,33 @@ public:
     Matcher(const std::string _name, MatcherPtr _matcher)
     {
         name = _name;
-
         matcher = _matcher;
     }
     
-    static Matcher Factory(const std::string name)
+    static Matcher Factory(const std::string name, const std::string descName)
     {
         MatcherPtr match;
-        std::cout<<"match factorcy"<<std::endl;
         if(name == "flann")
         {
-            // if(name="orb")    
-
-            //     match = new cv::FlannBasedMatcher(new cv::flann::LshIndexParams(12, 20, 2));
-            // else
-            //     match = cv::FlannBasedMatcher::create();
-            std::cout<<"im in"<<std::endl;
-            match = cv::FlannBasedMatcher::create();
+            if(descName == "orb")
+                return Matcher(name, new cv::FlannBasedMatcher(new cv::flann::LshIndexParams(12, 20, 2)));
+            else
+                return Matcher(name, cv::FlannBasedMatcher::create());        
         }
         else if(name == "bf")
         {
-            std::cout<<"im in2"<<std::endl;
-            // if(name=="orb")
-            //     match = cv::BFMatcher::create(cv::NORM_HAMMING);
-            // else
-            //     match = cv::BFMatcher::create(cv::NORM_L1);
-            match = cv::BFMatcher::create(cv::NORM_L1);
+            if(descName=="orb")
+                return Matcher(name, cv::BFMatcher::create(cv::NORM_HAMMING));
+            else
+                return Matcher(name, cv::BFMatcher::create(cv::NORM_L1));
         }
         else
             throw std::string("error");
-
-        return Matcher(name, match);
-
     }
     
     std::vector<cv::DMatch>& MatchDescriptors(cv::Mat referDesc, cv::Mat inputDesc)
     {
-        std::vector<cv::DMatch> matches;
-        
+
         matcher->match(inputDesc, referDesc, matches);
 
         std::sort(matches.begin(), matches.end());
@@ -160,14 +147,13 @@ public:
             referDets.push_back( Detector::Factory(feat) );
         for(const std::string& feat : features)
             inputDets.push_back( Detector::Factory(feat) );
-        for(const std::string& match : matcher)
-            matchers.push_back( Matcher::Factory(match) );
+        for(int i=0; i<matcher.size(); i++)
+            matchers.push_back(Matcher::Factory(matcher[i], inputDets[i].getResult().name));
     }
 
     // detect features and compute descriptors on reference image for all feature types
     void SetRefImage(cv::Mat refimg)
     {
-        std::cout<<" Set Ref!!!"<<std::endl;
         for(auto& det: referDets)
             det.DetectAndCompute(refimg);
     }
@@ -189,8 +175,10 @@ public:
     // change minimum inlier ratio in Matcher class
     void ChangeAcceptRatio(float change)
     {
+        std::cout<<" Change number: "<<change<<std::endl;
         acceptRatio += change;
         acceptRatio = std::max(std::min(acceptRatio, 1.f), 0.f);
+        std::cout<<"Ratio:"<<acceptRatio<<std::endl;
         Matcher::AcceptRatio() = acceptRatio;
     }
 
@@ -207,8 +195,8 @@ public:
         }
         cv::Mat stackedResult;
         cv::vconcat(resultImgs, stackedResult);
-        // if(stackedResult.rows > maxHeight)
-            // cv::resize()
+        if(stackedResult.rows > maxHeight)
+            cv::resize(stackedResult, stackedResult, cv::Size(stackedResult.cols/2, stackedResult.rows/2),0,0, CV_NEON );
         return stackedResult;
     }
 
@@ -217,17 +205,19 @@ public:
         cv::Mat result_;
         cv::Mat matchimg;
         int maxheight = 0;
+        try
+        {
+            // The drawMatches Fusion has a high probability of error occurring. 
+            // So, I use try, catch function
+            cv::drawMatches(inpDet.image, inpDet.keypts, refDet.image, refDet.keypts, match.matches, matchimg );    
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+        }
+        
 
-        // std::cout<<refDet.image<<std::endl;
-        // cv::imshow("matches", refDet.image);
-        // cv::imshow("matches", inpDet.image);
-        // cv::waitKey(10);
 
-        cv::drawMatches(inpDet.image, inpDet.keypts, refDet.image,
-                             refDet.keypts, match.matches, matchimg );
-        // cv::imshow("matches", matchimg);
-        // cv::waitKey(10);
-                             
         cv::putText(matchimg, inpDet.name, cv::Point(10,30),
                         cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar::all(0), 2);
 
